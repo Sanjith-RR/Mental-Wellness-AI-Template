@@ -29,15 +29,16 @@ export default function ChatPage({ params, searchParams }: ChatPageProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Placeholder past chats (match landing/sidebar behavior)
-  const pastChats = [
+  const pastChats = useMemo(() => [
     { id: "c1", name: "Chat 1" },
     { id: "c2", name: "Chat 2" },
     { id: "c3", name: "Chat 3" },
     { id: "c4", name: "Chat 4" },
-  ];
-  function slugify(name: string) {
+  ], []);
+  
+  const slugify = useMemo(() => (name: string) => {
     return name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
-  }
+  }, []);
 
   const starter = useMemo(() => {
     if (mode === "vent") return "I’m here. Let it all out when you’re ready.";
@@ -51,8 +52,10 @@ export default function ChatPage({ params, searchParams }: ChatPageProps) {
   }, [starter]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages.length]);
 
   function buildMockReply(userText: string): string {
     if (mode === "vent") {
@@ -79,25 +82,28 @@ export default function ChatPage({ params, searchParams }: ChatPageProps) {
     // Typing effect for assistant
     const full = buildMockReply(trimmed);
     setIsTyping(true);
+
+    // Use a more efficient typing effect
     let current = "";
-
-    // Start with an empty assistant message we'll progressively fill
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-    const indexOfAssistant = messages.length + 1; // future index after pushing user & placeholder
-
-    const interval = setInterval(() => {
+    const chunkSize = Math.max(1, Math.floor(full.length / 20));
+    
+    const typeNextChunk = () => {
       if (current.length < full.length) {
-        current = full.slice(0, current.length + Math.max(1, Math.floor(full.length / 40)));
+        current = full.slice(0, current.length + chunkSize);
         setMessages((prev) => {
-          const copy = [...prev];
-          copy[indexOfAssistant] = { role: "assistant", content: current };
-          return copy;
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { role: "assistant", content: current };
+          return newMessages;
         });
+        setTimeout(typeNextChunk, 30);
       } else {
-        clearInterval(interval);
         setIsTyping(false);
       }
-    }, 40);
+    };
+
+    // Add empty assistant message and start typing
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setTimeout(typeNextChunk, 100);
   }
 
   return (
@@ -125,9 +131,27 @@ export default function ChatPage({ params, searchParams }: ChatPageProps) {
               </li>
             ))}
           </ul>
-        </nav>
-
-      </aside>
+                 </nav>
+         <div className="px-3 py-3 border-t border-gray-200">
+           <button
+             type="button"
+             onClick={() => router.push("/profile")}
+             className="w-full flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2 text-left hover:bg-gray-50"
+             aria-label="Open profile"
+           >
+             <div className="h-8 w-8 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center text-xs text-gray-600">
+               YN
+             </div>
+             <div className="flex-1 min-w-0">
+               <p className="text-sm font-medium text-gray-900 truncate">Your Name</p>
+               <p className="text-xs text-gray-500 truncate">View profile</p>
+             </div>
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-400">
+               <path d="M9.29 6.71a1 1 0 011.42 0L16 12l-5.29 5.29a1 1 0 01-1.42-1.42L13.17 12 9.29 8.12a1 1 0 010-1.41z" />
+             </svg>
+           </button>
+         </div>
+       </aside>
 
       {/* Chat Main */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-6 sm:py-10">
@@ -140,30 +164,37 @@ export default function ChatPage({ params, searchParams }: ChatPageProps) {
             </div>
           </header>
 
-          {/* Messages */}
-          <main className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4" style={{ maxHeight: "65vh" }}>
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`rounded-2xl px-5 py-4 max-w-[80%] text-[15px] leading-relaxed shadow-sm ${
-                    m.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-none"
-                      : "bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200"
-                  }`}
-                >
-                  <span className="block text-xs text-gray-400 mb-1">{m.role === "user" ? "You" : "Assistant"}</span>
-                  <span>{m.content}</span>
-                </div>
-              </div>
-            ))}
+                     {/* Messages */}
+           <main className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4" style={{ maxHeight: "65vh" }}>
+             {messages.map((m, i) => (
+               <div key={`${m.role}-${i}-${m.content.slice(0, 10)}`} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                 <div
+                   className={`rounded-2xl px-5 py-4 max-w-[80%] text-[15px] leading-relaxed shadow-sm ${
+                     m.role === "user"
+                       ? "bg-blue-600 text-white rounded-br-none"
+                       : "bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200"
+                   }`}
+                 >
+                   <span className="block text-xs text-gray-400 mb-1">{m.role === "user" ? "You" : "Assistant"}</span>
+                   <span>{m.content}</span>
+                 </div>
+               </div>
+             ))}
 
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl px-5 py-3 bg-gray-100 text-gray-500 shadow-sm animate-pulse">
-                  Assistant is typing...
-                </div>
-              </div>
-            )}
+                         {isTyping && (
+               <div className="flex justify-start">
+                 <div className="rounded-2xl px-5 py-3 bg-gray-100 text-gray-500 shadow-sm">
+                   <div className="flex items-center gap-2">
+                     <div className="flex gap-1">
+                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                     </div>
+                     <span className="text-sm">Assistant is typing...</span>
+                   </div>
+                 </div>
+               </div>
+             )}
             <div ref={scrollRef} />
           </main>
 
