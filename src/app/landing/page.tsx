@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const router = useRouter();
-  const pastChats = ["Chat 1", "Chat 2", "Chat 3", "Chat 4"]; // placeholder
+  const pastChats = [
+    { id: "c1", name: "Chat 1" },
+    { id: "c2", name: "Chat 2" },
+    { id: "c3", name: "Chat 3" },
+    { id: "c4", name: "Chat 4" },
+  ]; // placeholder
 
   function generateChatId() {
     return Math.random().toString(36).slice(2, 10);
@@ -26,13 +31,20 @@ export default function LandingPage() {
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
           <ul className="space-y-1 px-2">
-            {pastChats.map((chat) => (
-              <li key={chat}>
+            {pastChats.map(({ id, name }) => {
+              const slug = name
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, "")
+                .trim()
+                .replace(/\s+/g, "-");
+              return (
+              <li key={id}>
                 <button
                   type="button"
+                  onClick={() => router.push(`/chat/${id}/${slug}`)}
                   className="w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
                 >
-                  <span className="truncate">{chat}</span>
+                  <span className="truncate">{name}</span>
                   {/* Lock icon */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -45,9 +57,28 @@ export default function LandingPage() {
                   </svg>
                 </button>
               </li>
-            ))}
+            );})}
           </ul>
         </nav>
+        <div className="px-3 py-3 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => router.push("/profile")}
+            className="w-full flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2 text-left hover:bg-gray-50"
+            aria-label="Open profile"
+          >
+            <div className="h-8 w-8 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center text-xs text-gray-600">
+              YN
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">Your Name</p>
+              <p className="text-xs text-gray-500 truncate">View profile</p>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4 text-gray-400">
+              <path d="M9.29 6.71a1 1 0 011.42 0L16 12l-5.29 5.29a1 1 0 01-1.42-1.42L13.17 12 9.29 8.12a1 1 0 010-1.41z" />
+            </svg>
+          </button>
+        </div>
       </aside>
 
       {/* Main */}
@@ -88,22 +119,7 @@ export default function LandingPage() {
         </div>
       </main>
 
-      {/* Bottom Navigation (mobile-first) */}
-      <nav className="fixed bottom-0 inset-x-0 sm:hidden bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.04)]">
-        <div className="mx-auto max-w-3xl flex items-center justify-around px-6 py-3">
-          <button
-            type="button"
-            className="inline-flex flex-col items-center text-gray-600 hover:text-gray-900"
-            onClick={() => router.push("/profile")}
-            aria-label="Profile"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
-              <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm-7 9a7 7 0 1114 0H5z" />
-            </svg>
-            <span className="text-xs mt-1">Profile</span>
-          </button>
-        </div>
-      </nav>
+
     </div>
   );
 }
