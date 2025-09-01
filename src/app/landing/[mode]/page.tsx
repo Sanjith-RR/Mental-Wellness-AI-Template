@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Send } from 'lucide-react';
 
 const CRISIS_DISCLAIMER = `
 **Please read this carefully:** I am an AI chatbot, and my purpose is to provide a safe space for conversation and companionship. However, I am not a substitute for professional medical or mental health advice. If you are experiencing a crisis, please seek immediate help from a qualified professional.
@@ -13,6 +15,7 @@ const CRISIS_DISCLAIMER = `
 `;
 
 export default function ChatPage() {
+  const router = useRouter();
   const params = useParams();
   const mode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
 
@@ -20,6 +23,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     // Scroll to bottom on new message
@@ -28,10 +32,33 @@ export default function ChatPage() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [mode, messages]);
+
+  const handleBack = () => {
+    router.push("/landing");
+  };
+
+  const getPlaceholderText = () => {
+    switch (mode) {
+      case "vent":
+        return "Vent about what's on your mind...";
+      case "advice":
+        return "Ask for some advice...";
+      case "company":
+        return "Say hi to your companion...";
+      default:
+        return "Type your message...";
+    }
+  };
+
   const handleInputChange = (e) => {
     setInput(e.target.value);
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -46,7 +73,6 @@ export default function ChatPage() {
       const response = await fetch(`/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Pass the selected mode to the API route
         body: JSON.stringify({ messages: newMessages, mode: mode }),
       });
 
@@ -58,7 +84,6 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let assistantResponse = '';
 
-      // Stream the response
       setMessages((prevMessages) => [...prevMessages, { role: 'assistant', content: '' }]);
 
       while (true) {
@@ -88,58 +113,75 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
-      <main className="flex-1 overflow-y-auto flex flex-col p-6">
-        <h1 className="text-3xl font-bold text-center text-indigo-600 dark:text-indigo-400 mb-6">
-          PocketPause Chatbot
+    <div className="flex flex-col h-screen bg-gray-100 font-sans">
+      <header className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm">
+        <motion.button
+          onClick={handleBack}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <ArrowLeft className="h-6 w-6 text-gray-600" />
+        </motion.button>
+        <h1 className="text-xl font-bold text-gray-900 capitalize">
+          {mode} Chat
         </h1>
+        <div className="w-10"></div>
+      </header>
 
-        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-4 rounded-lg bg-white dark:bg-gray-800 shadow-md">
-          {/* Initial Disclaimer Message */}
-          <div className="flex justify-start">
-            <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-4 rounded-xl max-w-xl shadow-sm text-sm">
-              <p className="font-bold mb-2">Important Safety Information</p>
-              <p className="whitespace-pre-line">{CRISIS_DISCLAIMER}</p>
+      <main className="flex-1 overflow-y-auto p-6">
+        <div ref={chatContainerRef} className="h-full overflow-y-auto space-y-4 rounded-lg bg-white p-6 shadow-md">
+          {messages.length === 0 && (
+            <div className="flex justify-center items-center h-full">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-yellow-100 text-yellow-800 p-4 rounded-xl max-w-xl shadow-sm text-sm"
+              >
+                <p className="font-bold mb-2">Important Safety Information</p>
+                <p className="whitespace-pre-line">{CRISIS_DISCLAIMER}</p>
+              </motion.div>
             </div>
-          </div>
+          )}
           
-          {/* Render chat messages */}
-          {messages.map((m, index) => (
-            <div key={index} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`p-3 rounded-xl shadow-md max-w-xl ${m.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
+          {messages.length > 0 && messages.map((m, index) => (
+            <motion.div
+              key={index}
+              className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className={`p-3 rounded-xl shadow-md max-w-xl ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}>
                 <p className="whitespace-pre-line">{m.content}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </main>
 
-      <form onSubmit={handleSubmit} className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+      <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-gray-200 flex items-center space-x-2">
         <input
-          className="flex-1 p-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100"
+          ref={inputRef}
+          className="flex-1 p-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={input}
-          placeholder={`Message as User...`}
+          placeholder={getPlaceholderText()}
           onChange={handleInputChange}
           disabled={isLoading}
+          autoFocus
         />
-        <button
+        <motion.button
           type="submit"
           className={`p-3 rounded-full text-white font-semibold transition-all duration-200 ${
             isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
           }`}
           disabled={isLoading}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
-          {isLoading ? (
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          )}
-        </button>
+          <Send className="h-5 w-5" />
+        </motion.button>
       </form>
     </div>
   );

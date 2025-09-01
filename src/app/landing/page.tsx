@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -21,30 +22,33 @@ export default function LandingPage() {
           Select a mode to start a new conversation.
         </p>
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button
+          <motion.button
             type="button"
             onClick={() => startChat("vent")}
             className="w-full rounded-2xl px-6 py-6 text-lg font-semibold text-white bg-rose-600 shadow-md hover:bg-rose-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-            aria-label="Start a venting chat"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             VENT
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             onClick={() => startChat("advice")}
             className="w-full rounded-2xl px-6 py-6 text-lg font-semibold text-white bg-indigo-600 shadow-md hover:bg-indigo-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-            aria-label="Start an advice chat"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             ADVICE
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             type="button"
             onClick={() => startChat("company")}
             className="w-full rounded-2xl px-6 py-6 text-lg font-semibold text-white bg-emerald-600 shadow-md hover:bg-emerald-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-            aria-label="Start a company chat"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             COMPANY
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>
