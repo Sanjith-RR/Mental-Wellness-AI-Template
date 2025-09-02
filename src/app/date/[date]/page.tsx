@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { notFound } from "next/navigation";
-
-interface DatePageProps {
-  params: { date?: string };
-}
+import { notFound, useParams } from "next/navigation";
 
 function isValidYYYYMMDD(s: string) {
   const m = /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -15,9 +11,14 @@ function isValidYYYYMMDD(s: string) {
   return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
 }
 
-export default function DatePage({ params }: DatePageProps) {
+export default function DatePage() {
+  const params = useParams() as { date?: string };
   const dateStr = params.date;
-  if (!dateStr || !isValidYYYYMMDD(dateStr)) return notFound();
+  
+  if (!dateStr || !isValidYYYYMMDD(dateStr)) {
+    return notFound();
+  }
+  
   const readable = new Date(dateStr).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
   const [mood, setMood] = useState<number | null>(null);
   const [note, setNote] = useState("");
@@ -104,5 +105,3 @@ export default function DatePage({ params }: DatePageProps) {
     </div>
   );
 }
-
-

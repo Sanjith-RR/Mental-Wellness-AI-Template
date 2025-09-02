@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function BasePage() {
   return (
-    <div className="min-h-screen w-full bg-gray-100 flex items-center justify-center px-4 sm:px-6 py-10 sm:py-16">
+    <div className="min-h-screen  bg-gray-100 flex items-center justify-center px-4 sm:px-6 py-10 sm:py-16">
       <div className="max-w-3xl w-full text-center bg-white rounded-3xl shadow-xl border border-gray-200 px-6 md:px-10 py-10 md:py-16">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-gray-900">
           Welcome to <span className="text-indigo-600">PocketPause</span>

@@ -19,11 +19,11 @@ export default function ChatPage() {
   const params = useParams();
   const mode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const chatContainerRef = useRef(null);
-  const inputRef = useRef(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Scroll to bottom on new message
@@ -55,11 +55,11 @@ export default function ChatPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
@@ -80,6 +80,16 @@ export default function ChatPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      // Add a check here to ensure response.body is not null
+      if (!response.body) {
+          console.error("Error: Response body is null.");
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { role: 'assistant', content: '⚠️ Sorry, the server returned an empty response.' },
+          ]);
+          return;
+      }
+      
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantResponse = '';
@@ -113,7 +123,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 font-sans">
+    <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 font-sans">
       <header className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm">
         <motion.button
           onClick={handleBack}
@@ -128,24 +138,24 @@ export default function ChatPage() {
         </h1>
         <div className="w-10"></div>
       </header>
-
-      <main className="flex-1 overflow-y-auto p-6">
-        <div ref={chatContainerRef} className="h-full overflow-y-auto space-y-4 rounded-lg bg-white p-6 shadow-md">
-          {messages.length === 0 && (
-            <div className="flex justify-center items-center h-full">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-yellow-100 text-yellow-800 p-4 rounded-xl max-w-xl shadow-sm text-sm"
-              >
-                <p className="font-bold mb-2">Important Safety Information</p>
-                <p className="whitespace-pre-line">{CRISIS_DISCLAIMER}</p>
-              </motion.div>
-            </div>
-          )}
-          
-          {messages.length > 0 && messages.map((m, index) => (
+      
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 && (
+          <div className="flex justify-center mt-8">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-yellow-100 text-yellow-800 p-4 rounded-xl max-w-xl shadow-sm text-sm"
+            >
+              <p className="font-bold mb-2">Important Safety Information</p>
+              <p className="whitespace-pre-line">{CRISIS_DISCLAIMER}</p>
+            </motion.div>
+          </div>
+        )}
+        
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto space-y-4">
+          {messages.map((m, index) => (
             <motion.div
               key={index}
               className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -161,28 +171,30 @@ export default function ChatPage() {
         </div>
       </main>
 
-      <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-gray-200 flex items-center space-x-2">
-        <input
-          ref={inputRef}
-          className="flex-1 p-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          value={input}
-          placeholder={getPlaceholderText()}
-          onChange={handleInputChange}
-          disabled={isLoading}
-          autoFocus
-        />
-        <motion.button
-          type="submit"
-          className={`p-3 rounded-full text-white font-semibold transition-all duration-200 ${
-            isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-          }`}
-          disabled={isLoading}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Send className="h-5 w-5" />
-        </motion.button>
-      </form>
+      <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-center">
+        <form onSubmit={handleSubmit} className="w-full max-w-3xl flex items-center space-x-2">
+          <input
+            ref={inputRef}
+            className="flex-1 p-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            value={input}
+            placeholder={getPlaceholderText()}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            autoFocus
+          />
+          <motion.button
+            type="submit"
+            className={`p-3 rounded-full text-white font-semibold transition-all duration-200 ${
+              isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+            }`}
+            disabled={isLoading}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Send className="h-5 w-5" />
+          </motion.button>
+        </form>
+      </div>
     </div>
   );
 }
