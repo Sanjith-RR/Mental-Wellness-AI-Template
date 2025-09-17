@@ -89,7 +89,7 @@ export default function ChatPage() {
           ]);
           return;
       }
-      
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantResponse = '';
